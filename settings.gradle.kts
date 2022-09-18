@@ -210,3 +210,8 @@ include(":tooling:module-domain")
 include(":tooling:module-processor")
 include(":tooling:module-processor-extension-test")
 include(":tooling:module-processor-spi-test")
+
+// mitsubishi connector application
+include(":mitsubishi-dsc:00-mitsubishi-connector:consumer")
+include(":mitsubishi-dsc:00-mitsubishi-connector:provider")
+include(":mitsubishi-dsc:00-mitsubishi-connector:transfer-data")
