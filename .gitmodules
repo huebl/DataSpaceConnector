@@ -1,0 +1,3 @@
+[submodule "mitsubishi-dsc"]
+	path = mitsubishi-dsc
+	url = git@github.com:huebl/mitsubishi-dsc.git
