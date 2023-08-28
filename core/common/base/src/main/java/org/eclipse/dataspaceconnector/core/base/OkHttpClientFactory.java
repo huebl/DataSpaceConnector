@@ -29,6 +29,10 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 
+import javax.net.ssl.*;
+import java.net.*;
+import java.security.cert.CertificateException;
+
 public class OkHttpClientFactory {
 
     @EdcSetting(value = "If true, enable HTTPS call enforcement. Default value is 'false'", type = "boolean")
@@ -43,9 +47,11 @@ public class OkHttpClientFactory {
      */
     @NotNull
     public static OkHttpClient create(ServiceExtensionContext context, EventListener okHttpEventListener) {
-        var builder = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS);
+        var builder = new OkHttpClient.Builder();
+        
+        //builder = configureToIgnoreCertificate(builder); 
+        builder.connectTimeout(30, TimeUnit.SECONDS);
+        builder.readTimeout(30, TimeUnit.SECONDS);
 
         ofNullable(okHttpEventListener).ifPresent(builder::eventListener);
 
@@ -70,4 +76,47 @@ public class OkHttpClientFactory {
             return chain.proceed(request);
         }
     }
+    
+    private static OkHttpClient.Builder configureToIgnoreCertificate(OkHttpClient.Builder builder) {
+        try {
+
+            // Create a trust manager that does not validate certificate chains
+            final TrustManager[] trustAllCerts = new TrustManager[] {
+                    new X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                                throws CertificateException {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
+                                throws CertificateException {
+                        }
+
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[]{};
+                        }
+                    }
+            };
+
+            // Install the all-trusting trust manager
+            final SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            // Create an ssl socket factory with our all-trusting manager
+            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+            builder.sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]);
+            builder.hostnameVerifier(new HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            });
+        } catch (Exception e) {
+           
+        }
+        return builder;
+    }
+
 }
